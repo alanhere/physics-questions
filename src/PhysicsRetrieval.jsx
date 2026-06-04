@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import {
   LineChart, Line,
   BarChart, Bar,
@@ -238,6 +238,31 @@ const TOPICS = [
     ],
   },
 ]
+
+// ---------------------------------------------------------------------------
+// URL share — compress questions into a URL hash and decompress on load
+// Uses the browser's built-in CompressionStream (no extra dependencies).
+// ---------------------------------------------------------------------------
+async function encodeQuestionsToHash(questions, level) {
+  const json = JSON.stringify({ questions, level })
+  const stream = new Blob([json]).stream().pipeThrough(new CompressionStream('deflate-raw'))
+  const buf = await new Response(stream).arrayBuffer()
+  const bytes = new Uint8Array(buf)
+  let binary = ''
+  for (const b of bytes) binary += String.fromCharCode(b)
+  // base64url (no padding, URL-safe chars)
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+async function decodeHashToQuestions(hash) {
+  const b64 = hash.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(b64)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))
+  const text = await new Response(stream).text()
+  return JSON.parse(text) // { questions, level }
+}
 
 // ---------------------------------------------------------------------------
 // System / user prompts
@@ -843,14 +868,61 @@ function ToolbarBtn({ onClick, children, variant = 'secondary' }) {
 // ---------------------------------------------------------------------------
 function QuestionsView({ state, setState, showAnswer }) {
   const levelLabel = state.level === 'HL' ? 'Higher Level' : 'Ordinary Level'
+  const [shareStatus, setShareStatus] = useState('idle') // 'idle' | 'copying' | 'copied' | 'show'
+  const [shareUrl, setShareUrl] = useState('')
 
   const handlePrint = () => window.print()
+
+  const handleShare = async () => {
+    setShareStatus('copying')
+    try {
+      const encoded = await encodeQuestionsToHash(state.questions, state.level)
+      const url = `${window.location.origin}${window.location.pathname}#q=${encoded}`
+      setShareUrl(url)
+
+      // Try modern clipboard API (requires HTTPS in production)
+      let copied = false
+      if (navigator.clipboard?.writeText) {
+        try {
+          await navigator.clipboard.writeText(url)
+          copied = true
+        } catch { /* fall through */ }
+      }
+      // Fallback: execCommand
+      if (!copied) {
+        const el = document.createElement('textarea')
+        el.value = url
+        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px'
+        document.body.appendChild(el)
+        el.select()
+        try { copied = document.execCommand('copy') } catch { /* fall through */ }
+        document.body.removeChild(el)
+      }
+
+      if (copied) {
+        setShareStatus('copied')
+        setTimeout(() => setShareStatus('idle'), 3000)
+      } else {
+        // Last resort: show the URL so user can copy manually
+        setShareStatus('show')
+      }
+    } catch (err) {
+      console.error('Share error:', err)
+      setShareStatus('idle')
+    }
+  }
+
+  const shareLabel =
+    shareStatus === 'copying' ? 'Building…' :
+    shareStatus === 'copied'  ? '✓ Copied!' :
+    shareStatus === 'show'    ? 'Share link' :
+    'Share link'
 
   return (
     <div className="min-h-screen bg-white">
       <Toolbar>
         <ToolbarBtn onClick={handlePrint} variant="secondary">
-          Print Questions
+          Print
         </ToolbarBtn>
         {!showAnswer ? (
           <ToolbarBtn
@@ -868,12 +940,39 @@ function QuestionsView({ state, setState, showAnswer }) {
           </ToolbarBtn>
         )}
         <ToolbarBtn
-          onClick={() => setState((s) => ({ ...s, view: 'config', questions: null }))}
-          variant="danger"
+          onClick={handleShare}
+          variant={shareStatus === 'copied' ? 'primary' : 'secondary'}
         >
-          Generate New
+          {shareLabel}
         </ToolbarBtn>
+        {!state.sharedView && (
+          <ToolbarBtn
+            onClick={() => setState((s) => ({ ...s, view: 'config', questions: null, sharedView: false }))}
+            variant="danger"
+          >
+            Generate New
+          </ToolbarBtn>
+        )}
       </Toolbar>
+
+      {/* Share URL panel — shown when clipboard API is unavailable */}
+      {shareStatus === 'show' && (
+        <div className="no-print bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center gap-3">
+          <span className="text-sm text-blue-800 font-medium shrink-0">Share link:</span>
+          <input
+            readOnly
+            value={shareUrl}
+            onFocus={(e) => e.target.select()}
+            className="flex-1 text-xs font-mono bg-white border border-blue-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+          <button
+            onClick={() => setShareStatus('idle')}
+            className="text-blue-500 hover:text-blue-700 text-sm font-medium shrink-0"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       <div className="max-w-2xl mx-auto px-6 py-6">
         {/* Print-only header */}
@@ -924,10 +1023,24 @@ const INITIAL_STATE = {
   questions: null,
   loading: false,
   error: null,
+  sharedView: false,
 }
 
 export default function PhysicsRetrieval() {
   const [state, setState] = useState(INITIAL_STATE)
+
+  // Detect a shared link on first load (#q=...)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const hash = window.location.hash
+    if (hash.startsWith('#q=')) {
+      decodeHashToQuestions(hash.slice(3))
+        .then(({ questions, level }) => {
+          setState((s) => ({ ...s, questions, level, view: 'questions', sharedView: true }))
+        })
+        .catch(() => { /* invalid hash — ignore, show config */ })
+    }
+  }, [])
 
   const generate = useCallback(async () => {
     setState((s) => ({ ...s, loading: true, error: null }))
