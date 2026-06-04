@@ -84,12 +84,12 @@ const TOPICS = [
       {
         label: '2.1 Heat and temperature',
         outcomes: [
-          'Evaluate the suitability of materials for use as thermometers',
+          'Analyse the suitability of materials for use as thermometers',
           'Determine specific heat capacity using primary data: Q = mcΔT',
           'Determine specific latent heat of vaporisation and fusion: Q = mL',
           'Verify mathematical models of heat energy, latent heat and temperature change',
           'Solve real-life problems involving heat transfer, change of state and improving efficiency',
-          'Investigate the impact of insulation on energy consumption and sustainability',
+          'Investigate the impact of insulation on energy consumption and sustainability using secondary sources',
         ],
       },
       {
@@ -97,43 +97,48 @@ const TOPICS = [
         outcomes: [
           'Model wave motion using the wave equation: v = fλ',
           'Describe transverse and longitudinal waves using amplitude, frequency, wavelength and period',
-          'Investigate resonance in real-life situations',
+          'Investigate resonance in real-life situations using secondary sources',
         ],
       },
       {
         label: '2.3 Wave behaviour',
         outcomes: [
           'Model wave behaviour: reflection, refraction, diffraction, interference and polarisation',
-          "Verify models for refraction using Snell's law: n₁sin θ₁ = n₂sin θ₂",
-          'Investigate and explain total internal reflection and critical angle',
-          'Investigate wave interference and diffraction patterns',
+          "Verify models for refraction using primary and secondary data (Snell's law: n₁sinθ₁ = n₂sinθ₂)",
         ],
       },
       {
-        label: '2.4 Optics and the electromagnetic spectrum',
+        label: '2.4 Electromagnetic energy and optics',
         outcomes: [
-          'Verify the thin lens formula using primary and secondary data: 1/f = 1/u + 1/v',
-          'Investigate the use of optics in technological and medical applications',
-          'Classify electromagnetic waves by wavelength, frequency, ionising ability and everyday use',
-          'Investigate and explain dispersion of light',
-          'Investigate solar irradiance and its impact on life on Earth',
+          'Verify the thin lens model using primary and secondary data for converging lenses and secondary data for diverging lenses: 1/f = 1/u + 1/v',
+          'Investigate the use of optics in technological and medical applications using secondary sources',
+          'Categorise electromagnetic waves by their wavelength, frequency, ionising ability and everyday use',
+          'Investigate dispersion and explain the phenomenon',
+          'Investigate solar irradiance and its impact on life on Earth using secondary sources',
         ],
       },
       {
-        label: '2.5 Sound and standing waves',
+        label: '2.5 Sound energy',
         outcomes: [
-          'Examine evidence for the mechanical wave nature of sound',
-          'Relate the pitch and loudness of sounds to their wave properties (frequency and amplitude)',
-          'Investigate the use of ultrasound in technological and medical contexts',
-          'Investigate standing waves on a stretched string and identify nodes and antinodes',
-          'Relate the length of a string to the fundamental frequency of a standing wave: f = 1/2l × √(T/μ)',
+          'Examine evidence to support the mechanical wave nature of sound',
+          'Relate the pitch and loudness of sounds to their wave properties using observation and secondary data',
+          'Investigate the use of ultrasound in technological and medical contexts using secondary sources',
         ],
       },
       {
-        label: '2.6 The Doppler effect',
+        label: '2.6 Principle of superposition of waves',
+        outcomes: [
+          'Model standing waves on a stretched string as resulting from the interference of two waves moving in opposite directions',
+          'Verify standing waves on a stretched string using primary and secondary data',
+          'Relate the length of a string to the fundamental frequency of a standing wave using secondary data',
+          'Investigate the wave nature of light and determine its wavelength using primary and secondary data (Young\'s slits / diffraction grating)',
+        ],
+      },
+      {
+        label: '2.7 Wave effects — the Doppler effect',
         outcomes: [
           'Model real-life situations involving the Doppler effect',
-          'Investigate the Doppler effect in real-life applications (e.g. speed detection, medical imaging)',
+          'Investigate the Doppler effect in real-life applications using secondary sources (e.g. speed detection, medical imaging)',
         ],
       },
     ],
@@ -161,8 +166,9 @@ const TOPICS = [
           'Apply relationships between current, voltage, power and resistance: V = IR, P = VI',
           'Analyse series and parallel circuits, including the rules for voltage and current',
           'Apply formulae for resistors in series and parallel',
-          'Investigate the use of semiconductors and diodes in real-world applications',
-          "Verify Ohm's law for an ohmic conductor",
+          'Investigate the use of semiconductors in real-world applications using secondary sources',
+          'Model the relationship between current and voltage across a diode in forward and reverse bias using primary and secondary data',
+          "Verify Ohm's law for an ohmic conductor using primary and secondary data",
           'Investigate current–voltage characteristics of non-ohmic conductors',
           'Investigate the effect of temperature on the resistance of a conductor',
         ],
@@ -179,11 +185,12 @@ const TOPICS = [
       {
         label: '3.4 Electromagnetic induction and generators',
         outcomes: [
-          "Investigate the relationship between a change in magnetic flux and induced EMF (Faraday's law; Lenz's law)",
-          'Model the generator effect and describe how AC and DC generators work',
-          'Explain the operating principle of a transformer and solve efficiency problems',
-          'Investigate transmission losses in the National Grid',
-          'Evaluate issues related to electrical generation and distribution',
+          "Investigate the relationship between a change in magnetic flux and induced EMF and subsequent current flow in a conducting coil (Faraday's law; Lenz's law)",
+          'Model the generator effect, AC and DC generators, and transformers',
+          'Investigate the use of induced potential difference in a variety of applications using secondary sources',
+          'Solve problems involving the efficiency of transformers',
+          'Investigate transmission losses in the National Grid using secondary sources',
+          'Investigate issues related to electrical generation and distribution using secondary sources',
         ],
       },
     ],
@@ -212,8 +219,8 @@ const TOPICS = [
       {
         label: '4.3 Atomic structure and emission spectra',
         outcomes: [
-          'Model the atom and explain how emission and absorption spectra arise from electron energy transitions',
-          'Appreciate how the analysis of emission spectra has contributed to our understanding of the universe',
+          'Model the atom and explain emission spectra of atoms',
+          'Appreciate how the analysis of emission spectra data has contributed to our understanding of the universe',
         ],
       },
       {
@@ -626,7 +633,7 @@ function ConfigPanel({ state, setState }) {
           Number of Questions
         </h2>
         <div className="flex gap-2 flex-wrap">
-          {[4, 6, 8, 12].map((n) => (
+          {[4, 6].map((n) => (
             <button
               key={n}
               onClick={() => setState((s) => ({ ...s, questionCount: n }))}
