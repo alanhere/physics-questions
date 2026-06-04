@@ -244,34 +244,46 @@ const TOPICS = [
 // ---------------------------------------------------------------------------
 const SYSTEM_PROMPT = `You are an experienced Irish Leaving Certificate Physics teacher creating retrieval practice questions aligned to the 2025 NCCA LC Physics specification. You have deep expertise in the specification's four strands: Forces and Motion, Wave Motion and Energy Transfer, Electric and Magnetic Fields, and Modern Physics. Every question must directly target a specific learning outcome from the specification — i.e. it must ask students to do something they are explicitly expected to be able to demonstrate (model, calculate, verify, investigate, explain, classify, etc.). Use only formulae and constants from the official SEC formula and data sheet. All questions must be answerable from the information provided in the question. Use Irish English spelling throughout (colour, centre, analyse, practise, etc.). Respond only with a valid JSON object — no markdown, no code fences, no explanation or text outside the JSON.`
 
-function buildUserPrompt(level, questionCount, selectedSubtopics) {
+// Returns all outcome strings from the TOPICS tree, optionally filtered to eligible level
+function allOutcomesFor(subtopics, level) {
+  return subtopics
+    .filter((st) => !(st.hlOnly && level === 'OL'))
+    .flatMap((st) => st.outcomes)
+}
+
+function buildUserPrompt(level, questionCount, selectedOutcomes) {
   const levelLabel = level === 'HL' ? 'Higher Level' : 'Ordinary Level'
 
-  // Look up the full subtopic objects (with outcomes) for selected labels
+  // Group selected outcomes back into their sections for a structured prompt block
   const allSubtopics = TOPICS.flatMap((t) => t.subtopics)
-  const selected = allSubtopics.filter((st) => selectedSubtopics.includes(st.label))
+  const sections = allSubtopics
+    .map((st) => ({
+      label: st.label,
+      selected: st.outcomes.filter((o) => selectedOutcomes.includes(o)),
+    }))
+    .filter((s) => s.selected.length > 0)
 
-  const topicBlock = selected
-    .map((st) => {
-      const outcomeList = st.outcomes.map((o) => `    • ${o}`).join('\n')
-      return `${st.label}\n${outcomeList}`
+  const topicBlock = sections
+    .map((s) => {
+      const outcomeList = s.selected.map((o) => `    • ${o}`).join('\n')
+      return `${s.label}\n${outcomeList}`
     })
     .join('\n\n')
 
   const interleaveInstruction =
-    selected.length > 1
+    sections.length > 1
       ? 'Spread questions across the selected sections — no two consecutive questions should target the same section.'
       : 'All questions may come from the single selected section.'
   const graphInstruction =
-    selected.length > 1
+    sections.length > 1
       ? 'Include at least one graph-based question with data suitable for rendering in Recharts (line, bar, or scatter chart).'
       : 'Include a graph-based question if the selected section lends itself to one.'
 
   return `Generate ${questionCount} Leaving Certificate Physics retrieval practice questions at ${levelLabel}.
 
-Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, etc.
+Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, etc. Do not invent questions on topics outside this list.
 
-Selected sections and their learning outcomes:
+Selected learning outcomes (grouped by section):
 
 ${topicBlock}
 
@@ -286,7 +298,7 @@ Return only a JSON object matching exactly this schema:
       "id": number,
       "topic": "strand name (e.g. Strand 1: Forces and Motion)",
       "subtopic": "section label (e.g. 1.2 Forces acting on a particle)",
-      "learning_outcome": "the specific learning outcome this question targets",
+      "learning_outcome": "the specific learning outcome this question targets (copy it exactly from the list above)",
       "type": "multiple_choice" | "short_answer" | "explain" | "graph",
       "question_text": "the question",
       "options": ["A. ...", "B. ...", "C. ...", "D. ..."] or null,
@@ -455,80 +467,102 @@ function QuestionCard({ q, index, showAnswer }) {
 // Configuration panel
 // ---------------------------------------------------------------------------
 function ConfigPanel({ state, setState }) {
-  const { level, questionCount, selectedSubtopics, expandedTopics } = state
+  const { level, questionCount, selectedOutcomes, expandedTopics, expandedSections } = state
 
-  const isEligible = (subtopic) => !(subtopic.hlOnly && level === 'OL')
+  const isSectionEligible = (subtopic) => !(subtopic.hlOnly && level === 'OL')
 
+  // ── Level toggle ──────────────────────────────────────────────────────────
   const toggleLevel = (newLevel) => {
     setState((s) => {
-      const filtered =
-        newLevel === 'OL'
-          ? s.selectedSubtopics.filter(
-              (label) =>
-                !TOPICS.flatMap((t) => t.subtopics).find(
-                  (st) => st.label === label && st.hlOnly
-                )
-            )
-          : s.selectedSubtopics
-      return { ...s, level: newLevel, selectedSubtopics: filtered }
+      if (newLevel === 'OL') {
+        // Drop outcomes belonging to HL-only sections
+        const hlOutcomes = new Set(
+          TOPICS.flatMap((t) =>
+            t.subtopics.filter((st) => st.hlOnly).flatMap((st) => st.outcomes)
+          )
+        )
+        return {
+          ...s,
+          level: newLevel,
+          selectedOutcomes: s.selectedOutcomes.filter((o) => !hlOutcomes.has(o)),
+        }
+      }
+      return { ...s, level: newLevel }
     })
   }
 
-  const toggleSubtopic = (label) => {
+  // ── Outcome-level toggle ──────────────────────────────────────────────────
+  const toggleOutcome = (outcome) => {
     setState((s) => ({
       ...s,
-      selectedSubtopics: s.selectedSubtopics.includes(label)
-        ? s.selectedSubtopics.filter((l) => l !== label)
-        : [...s.selectedSubtopics, label],
+      selectedOutcomes: s.selectedOutcomes.includes(outcome)
+        ? s.selectedOutcomes.filter((o) => o !== outcome)
+        : [...s.selectedOutcomes, outcome],
     }))
   }
 
-  const toggleTopic = (topic) => {
-    const eligibleLabels = topic.subtopics
-      .filter(isEligible)
-      .map((st) => st.label)
+  // ── Section-level toggle (all outcomes in one section) ────────────────────
+  const toggleSection = (subtopic) => {
+    const outcomes = subtopic.outcomes
     setState((s) => {
-      const allSelected = eligibleLabels.every((l) =>
-        s.selectedSubtopics.includes(l)
-      )
+      const allSelected = outcomes.every((o) => s.selectedOutcomes.includes(o))
       if (allSelected) {
-        return {
-          ...s,
-          selectedSubtopics: s.selectedSubtopics.filter(
-            (l) => !eligibleLabels.includes(l)
-          ),
-        }
+        return { ...s, selectedOutcomes: s.selectedOutcomes.filter((o) => !outcomes.includes(o)) }
       } else {
-        const merged = [
-          ...s.selectedSubtopics,
-          ...eligibleLabels.filter((l) => !s.selectedSubtopics.includes(l)),
-        ]
-        return { ...s, selectedSubtopics: merged }
+        const merged = [...s.selectedOutcomes, ...outcomes.filter((o) => !s.selectedOutcomes.includes(o))]
+        return { ...s, selectedOutcomes: merged }
       }
     })
   }
 
-  const toggleExpand = (topicName) => {
+  // ── Strand-level toggle (all outcomes in a strand) ────────────────────────
+  const toggleStrand = (topic) => {
+    const outcomes = topic.subtopics
+      .filter(isSectionEligible)
+      .flatMap((st) => st.outcomes)
+    setState((s) => {
+      const allSelected = outcomes.every((o) => s.selectedOutcomes.includes(o))
+      if (allSelected) {
+        return { ...s, selectedOutcomes: s.selectedOutcomes.filter((o) => !outcomes.includes(o)) }
+      } else {
+        const merged = [...s.selectedOutcomes, ...outcomes.filter((o) => !s.selectedOutcomes.includes(o))]
+        return { ...s, selectedOutcomes: merged }
+      }
+    })
+  }
+
+  // ── Expand/collapse helpers ───────────────────────────────────────────────
+  const toggleExpandTopic = (name) => {
     setState((s) => ({
       ...s,
-      expandedTopics: s.expandedTopics.includes(topicName)
-        ? s.expandedTopics.filter((n) => n !== topicName)
-        : [...s.expandedTopics, topicName],
+      expandedTopics: s.expandedTopics.includes(name)
+        ? s.expandedTopics.filter((n) => n !== name)
+        : [...s.expandedTopics, name],
     }))
   }
 
-  const selectAll = () => {
-    const allEligible = TOPICS.flatMap((t) =>
-      t.subtopics.filter(isEligible).map((st) => st.label)
-    )
-    setState((s) => ({ ...s, selectedSubtopics: allEligible }))
+  const toggleExpandSection = (label) => {
+    setState((s) => ({
+      ...s,
+      expandedSections: s.expandedSections.includes(label)
+        ? s.expandedSections.filter((l) => l !== label)
+        : [...s.expandedSections, label],
+    }))
   }
 
-  const clearAll = () => setState((s) => ({ ...s, selectedSubtopics: [] }))
+  // ── Select/clear all ──────────────────────────────────────────────────────
+  const selectAll = () => {
+    const all = TOPICS.flatMap((t) =>
+      t.subtopics.filter(isSectionEligible).flatMap((st) => st.outcomes)
+    )
+    setState((s) => ({ ...s, selectedOutcomes: all }))
+  }
 
-  const canGenerate = selectedSubtopics.length > 0
-  const showRepeatWarning = selectedSubtopics.length < questionCount && selectedSubtopics.length > 0
-  const showSingleWarning = selectedSubtopics.length === 1
+  const clearAll = () => setState((s) => ({ ...s, selectedOutcomes: [] }))
+
+  const canGenerate = selectedOutcomes.length > 0
+  const showRepeatWarning =
+    selectedOutcomes.length > 0 && selectedOutcomes.length < questionCount
 
   return (
     <div className="max-w-2xl mx-auto p-6">
@@ -536,7 +570,7 @@ function ConfigPanel({ state, setState }) {
         LC Physics — Retrieval Practice Generator
       </h1>
       <p className="text-gray-500 text-sm mb-6">
-        Configure your question set below, then generate and project or print.
+        Select the learning outcomes you want to practise, then generate and project or print.
       </p>
 
       {/* Level selector */}
@@ -583,24 +617,23 @@ function ConfigPanel({ state, setState }) {
         </div>
       </section>
 
-      {/* Topic checklist */}
+      {/* Topic / outcome checklist */}
       <section className="mb-4">
         <div className="flex items-center justify-between mb-2">
           <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-            Topics
+            Learning Outcomes
+            {selectedOutcomes.length > 0 && (
+              <span className="ml-2 text-blue-600 font-normal normal-case">
+                ({selectedOutcomes.length} selected)
+              </span>
+            )}
           </h2>
           <div className="flex gap-2">
-            <button
-              onClick={selectAll}
-              className="text-xs text-blue-600 hover:underline font-medium"
-            >
+            <button onClick={selectAll} className="text-xs text-blue-600 hover:underline font-medium">
               Select all
             </button>
             <span className="text-gray-300">|</span>
-            <button
-              onClick={clearAll}
-              className="text-xs text-gray-500 hover:underline font-medium"
-            >
+            <button onClick={clearAll} className="text-xs text-gray-500 hover:underline font-medium">
               Clear all
             </button>
           </div>
@@ -608,70 +641,115 @@ function ConfigPanel({ state, setState }) {
 
         <div className="border border-gray-200 rounded-lg overflow-hidden">
           {TOPICS.map((topic) => {
-            const isExpanded = expandedTopics.includes(topic.name)
-            const eligibleSubs = topic.subtopics.filter(isEligible)
-            const allChecked =
-              eligibleSubs.length > 0 &&
-              eligibleSubs.every((st) => selectedSubtopics.includes(st.label))
-            const someChecked =
-              !allChecked && eligibleSubs.some((st) => selectedSubtopics.includes(st.label))
+            const isTopicExpanded = expandedTopics.includes(topic.name)
+            const eligibleSections = topic.subtopics.filter(isSectionEligible)
+            const allStrandOutcomes = eligibleSections.flatMap((st) => st.outcomes)
+            const strandAllChecked =
+              allStrandOutcomes.length > 0 &&
+              allStrandOutcomes.every((o) => selectedOutcomes.includes(o))
+            const strandSomeChecked =
+              !strandAllChecked && allStrandOutcomes.some((o) => selectedOutcomes.includes(o))
 
             return (
               <div key={topic.name} className="border-b border-gray-200 last:border-0">
-                {/* Topic header row */}
-                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 cursor-pointer select-none">
+
+                {/* ── Strand row ── */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 select-none">
                   <input
                     type="checkbox"
-                    checked={allChecked}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someChecked
-                    }}
-                    onChange={() => toggleTopic(topic)}
-                    className="w-4 h-4 accent-blue-700 cursor-pointer"
-                    aria-label={`Select all subtopics under ${topic.name}`}
+                    checked={strandAllChecked}
+                    ref={(el) => { if (el) el.indeterminate = strandSomeChecked }}
+                    onChange={() => toggleStrand(topic)}
+                    className="w-4 h-4 accent-blue-700 cursor-pointer shrink-0"
+                    aria-label={`Select all outcomes in ${topic.name}`}
                   />
                   <span
-                    className="flex-1 font-semibold text-gray-800 text-sm"
-                    onClick={() => toggleExpand(topic.name)}
+                    className="flex-1 font-semibold text-gray-800 text-sm cursor-pointer"
+                    onClick={() => toggleExpandTopic(topic.name)}
                   >
                     {topic.name}
                   </span>
                   <button
-                    onClick={() => toggleExpand(topic.name)}
-                    className="text-gray-400 hover:text-gray-700 p-0 border-0 bg-transparent w-5 h-5 flex items-center justify-center"
-                    aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                    onClick={() => toggleExpandTopic(topic.name)}
+                    className="text-gray-400 hover:text-gray-700 p-0 border-0 bg-transparent w-5 h-5 flex items-center justify-center cursor-pointer"
+                    aria-label={isTopicExpanded ? 'Collapse' : 'Expand'}
                   >
-                    {isExpanded ? '▲' : '▼'}
+                    {isTopicExpanded ? '▲' : '▼'}
                   </button>
                 </div>
 
-                {/* Subtopics */}
-                {isExpanded && (
+                {/* ── Sections within strand ── */}
+                {isTopicExpanded && (
                   <div className="bg-white">
                     {topic.subtopics.map((st) => {
-                      const disabled = !isEligible(st)
-                      const checked = selectedSubtopics.includes(st.label)
+                      const disabled = !isSectionEligible(st)
+                      const isSectionExpanded = expandedSections.includes(st.label)
+                      const sectionAllChecked =
+                        !disabled &&
+                        st.outcomes.length > 0 &&
+                        st.outcomes.every((o) => selectedOutcomes.includes(o))
+                      const sectionSomeChecked =
+                        !sectionAllChecked &&
+                        !disabled &&
+                        st.outcomes.some((o) => selectedOutcomes.includes(o))
+
                       return (
-                        <label
-                          key={st.label}
-                          className={`flex items-start gap-2 px-5 py-1.5 text-sm cursor-pointer hover:bg-blue-50 ${
-                            disabled ? 'opacity-40 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            disabled={disabled}
-                            onChange={() => !disabled && toggleSubtopic(st.label)}
-                            className="w-4 h-4 mt-0.5 accent-blue-700 cursor-pointer"
-                          />
-                          <span className={disabled ? 'text-gray-400' : 'text-gray-700'}>
-                            {st.label}
-                            {st.hlOnly && (
-                              <span className="ml-1 text-xs text-gray-400 font-medium">[HL]</span>
+                        <div key={st.label} className={disabled ? 'opacity-40' : ''}>
+
+                          {/* Section row */}
+                          <div className="flex items-center gap-2 px-5 py-1.5 hover:bg-blue-50 select-none border-t border-gray-100 first:border-0">
+                            <input
+                              type="checkbox"
+                              checked={sectionAllChecked}
+                              ref={(el) => { if (el) el.indeterminate = sectionSomeChecked }}
+                              disabled={disabled}
+                              onChange={() => !disabled && toggleSection(st)}
+                              className="w-4 h-4 accent-blue-700 cursor-pointer shrink-0"
+                              aria-label={`Select all outcomes in ${st.label}`}
+                            />
+                            <span
+                              className={`flex-1 text-sm font-medium cursor-pointer ${disabled ? 'text-gray-400' : 'text-gray-700'}`}
+                              onClick={() => !disabled && toggleExpandSection(st.label)}
+                            >
+                              {st.label}
+                              {st.hlOnly && (
+                                <span className="ml-1 text-xs text-gray-400 font-normal">[HL]</span>
+                              )}
+                            </span>
+                            {!disabled && (
+                              <button
+                                onClick={() => toggleExpandSection(st.label)}
+                                className="text-gray-400 hover:text-gray-600 p-0 border-0 bg-transparent text-xs cursor-pointer"
+                                aria-label={isSectionExpanded ? 'Collapse outcomes' : 'Expand outcomes'}
+                              >
+                                {isSectionExpanded ? '▲' : '▼'}
+                              </button>
                             )}
-                          </span>
-                        </label>
+                          </div>
+
+                          {/* ── Individual outcomes ── */}
+                          {isSectionExpanded && !disabled && (
+                            <div className="bg-blue-50/30">
+                              {st.outcomes.map((outcome) => {
+                                const checked = selectedOutcomes.includes(outcome)
+                                return (
+                                  <label
+                                    key={outcome}
+                                    className="flex items-start gap-2 px-10 py-1.5 text-xs cursor-pointer hover:bg-blue-100/50 border-t border-blue-100/60"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={checked}
+                                      onChange={() => toggleOutcome(outcome)}
+                                      className="w-3.5 h-3.5 mt-0.5 accent-blue-700 cursor-pointer shrink-0"
+                                    />
+                                    <span className="text-gray-600 leading-snug">{outcome}</span>
+                                  </label>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -682,12 +760,10 @@ function ConfigPanel({ state, setState }) {
         </div>
       </section>
 
-      {/* Warnings */}
-      {(showRepeatWarning || showSingleWarning) && (
+      {/* Warning */}
+      {showRepeatWarning && (
         <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
-          {showSingleWarning
-            ? 'With one topic selected, all questions will come from the same area.'
-            : 'You have selected fewer topic areas than questions. Some topics may be repeated.'}
+          Fewer learning outcomes selected than questions requested — some outcomes may generate more than one question.
         </div>
       )}
 
@@ -729,7 +805,7 @@ function ConfigPanel({ state, setState }) {
           <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
             {!state.apiKey
               ? 'Please enter your Anthropic API key'
-              : 'Please select at least one topic'}
+              : 'Please select at least one learning outcome'}
           </div>
         )}
       </div>
@@ -841,8 +917,9 @@ const INITIAL_STATE = {
   view: 'config',
   level: 'HL',
   questionCount: 4,
-  selectedSubtopics: [],
+  selectedOutcomes: [],
   expandedTopics: TOPICS.map((t) => t.name),
+  expandedSections: [],
   apiKey: localStorage.getItem('anthropic_api_key') || '',
   questions: null,
   loading: false,
@@ -870,7 +947,7 @@ export default function PhysicsRetrieval() {
           messages: [
             {
               role: 'user',
-              content: buildUserPrompt(state.level, state.questionCount, state.selectedSubtopics),
+              content: buildUserPrompt(state.level, state.questionCount, state.selectedOutcomes),
             },
           ],
         }),
@@ -910,7 +987,7 @@ export default function PhysicsRetrieval() {
           : 'Could not connect to the API. Please check your connection and try again.'
       setState((s) => ({ ...s, loading: false, error: message, view: 'error' }))
     }
-  }, [state.apiKey, state.level, state.questionCount, state.selectedSubtopics])
+  }, [state.apiKey, state.level, state.questionCount, state.selectedOutcomes])
 
   // Trigger generation when view switches to 'generating'
   if (state.view === 'generating' && !state.loading) {
