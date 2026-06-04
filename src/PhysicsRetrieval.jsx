@@ -7,99 +7,234 @@ import {
 } from 'recharts'
 
 // ---------------------------------------------------------------------------
-// Topic data
+// Topic data — aligned to the 2025 LC Physics specification (NCCA)
+// Each subtopic lists the specific learning outcomes students should be able to demonstrate.
+// hlOnly: true marks sections that appear in bold in the spec (HL only).
 // ---------------------------------------------------------------------------
 const TOPICS = [
   {
-    name: 'Mechanics',
+    name: 'Strand 1: Forces and Motion',
     subtopics: [
-      { label: 'Scalars and vectors; distance, displacement, speed, velocity' },
-      { label: 'Equations of uniform acceleration; free fall' },
-      { label: 'Projectile motion' },
-      { label: "Newton's laws of motion" },
-      { label: 'Momentum, impulse and collisions' },
-      { label: 'Work, energy and power' },
-      { label: 'Circular motion', hlOnly: true },
-      { label: 'Simple harmonic motion', hlOnly: true },
-      { label: "Density and pressure; Archimedes' principle" },
+      {
+        label: '1.1 Particle motion in a straight line',
+        outcomes: [
+          'Model the motion of a particle in a straight line using displacement, velocity, acceleration and time',
+          'Investigate and interpret displacement–time and velocity–time graphs for constant and varying motion',
+          'Derive and apply the kinematic equations: v = u + at, s = ut + ½at², v² = u² + 2as',
+          'Identify and distinguish between scalar and vector quantities',
+          'Resolve vectors into perpendicular components and calculate the resultant of two vectors',
+          'Verify the law of addition of vectors in one and two dimensions',
+        ],
+      },
+      {
+        label: '1.2 Forces acting on a particle',
+        outcomes: [
+          "Model real-world situations using Newton's three laws of motion (F = ma)",
+          "Verify Newton's 2nd law of motion",
+          'Model problems involving the motion of a particle under a constant resultant force',
+          'Solve problems involving normal force, friction, tension, buoyancy and gravitational force',
+          'Solve problems relating to pressure in solids (P = F/A) and fluids (P = hρg)',
+          'Investigate density (ρ = m/V)',
+          'Investigate the principle of conservation of momentum (p = mv)',
+          "Verify that collisions are governed by Newton's laws and conservation of momentum",
+          'Model direct collisions in one dimension and in two dimensions using perpendicular and parallel components',
+        ],
+      },
+      {
+        label: '1.3 Stretching and compressing objects',
+        outcomes: [
+          'Investigate the force needed to compress or stretch an object',
+          "Verify Hooke's law for elastic objects: F = −ks",
+          'Calculate elastic potential energy stored in a stretched or compressed material: E = ½ks²',
+        ],
+      },
+      {
+        label: '1.4 Work, energy and power',
+        outcomes: [
+          'Define and calculate work done by a constant force: W = Fs',
+          'Model and calculate gravitational potential energy (Ep = mgh), kinetic energy (Ek = ½mv²) and elastic potential energy',
+          'Calculate power: P = W/t',
+          'Apply the principle of conservation of energy to real-life situations',
+          'Investigate the principle of conservation of energy using primary and secondary data',
+        ],
+      },
+      {
+        label: '1.5 Gravitational fields',
+        hlOnly: true,
+        outcomes: [
+          'Model the gravitational field strength at any point in a gravitational field, including at the surface of a planet: g = GM/r²',
+          'Determine g using primary data (e.g. simple pendulum: g = 4π²l/T²)',
+          'Calculate escape velocity from a celestial body',
+        ],
+      },
+      {
+        label: '1.6 Circular motion and orbital mechanics',
+        outcomes: [
+          'Explain centripetal force and centripetal acceleration',
+          'Model the dynamics of an object moving in a circle with constant angular velocity: F = mv²/r',
+          "Verify Kepler's 3rd law using secondary data: T² ∝ r³",
+          'Model the orbits of planets and satellites in near-Earth and geostationary orbits',
+        ],
+      },
     ],
   },
   {
-    name: 'Heat',
+    name: 'Strand 2: Wave Motion and Energy Transfer',
     subtopics: [
-      { label: 'Temperature scales; thermometry' },
-      { label: 'Specific heat capacity' },
-      { label: 'Specific latent heat' },
-      { label: 'Conduction, convection and radiation' },
-      { label: "Gas laws (Boyle's, Charles's, Gay-Lussac's)" },
-      { label: 'Ideal gas equation' },
-      { label: 'Thermodynamics; first law', hlOnly: true },
+      {
+        label: '2.1 Heat and temperature',
+        outcomes: [
+          'Evaluate the suitability of materials for use as thermometers',
+          'Determine specific heat capacity using primary data: Q = mcΔT',
+          'Determine specific latent heat of vaporisation and fusion: Q = mL',
+          'Verify mathematical models of heat energy, latent heat and temperature change',
+          'Solve real-life problems involving heat transfer, change of state and improving efficiency',
+          'Investigate the impact of insulation on energy consumption and sustainability',
+        ],
+      },
+      {
+        label: '2.2 Wave motion and resonance',
+        outcomes: [
+          'Model wave motion using the wave equation: v = fλ',
+          'Describe transverse and longitudinal waves using amplitude, frequency, wavelength and period',
+          'Investigate resonance in real-life situations',
+        ],
+      },
+      {
+        label: '2.3 Wave behaviour',
+        outcomes: [
+          'Model wave behaviour: reflection, refraction, diffraction, interference and polarisation',
+          "Verify models for refraction using Snell's law: n₁sin θ₁ = n₂sin θ₂",
+          'Investigate and explain total internal reflection and critical angle',
+          'Investigate wave interference and diffraction patterns',
+        ],
+      },
+      {
+        label: '2.4 Optics and the electromagnetic spectrum',
+        outcomes: [
+          'Verify the thin lens formula using primary and secondary data: 1/f = 1/u + 1/v',
+          'Investigate the use of optics in technological and medical applications',
+          'Classify electromagnetic waves by wavelength, frequency, ionising ability and everyday use',
+          'Investigate and explain dispersion of light',
+          'Investigate solar irradiance and its impact on life on Earth',
+        ],
+      },
+      {
+        label: '2.5 Sound and standing waves',
+        outcomes: [
+          'Examine evidence for the mechanical wave nature of sound',
+          'Relate the pitch and loudness of sounds to their wave properties (frequency and amplitude)',
+          'Investigate the use of ultrasound in technological and medical contexts',
+          'Investigate standing waves on a stretched string and identify nodes and antinodes',
+          'Relate the length of a string to the fundamental frequency of a standing wave: f = 1/2l × √(T/μ)',
+        ],
+      },
+      {
+        label: '2.6 The Doppler effect',
+        outcomes: [
+          'Model real-life situations involving the Doppler effect',
+          'Investigate the Doppler effect in real-life applications (e.g. speed detection, medical imaging)',
+        ],
+      },
     ],
   },
   {
-    name: 'Waves',
+    name: 'Strand 3: Electric and Magnetic Fields',
     subtopics: [
-      { label: 'Wave properties; wave equation' },
-      { label: 'Sound; intensity and resonance' },
-      { label: 'Reflection and refraction; Snell\'s law' },
-      { label: 'Total internal reflection' },
-      { label: 'Diffraction; diffraction gratings' },
-      { label: "Interference; Young's double slit" },
-      { label: 'Stationary waves; nodes and antinodes' },
+      {
+        label: '3.1 Electrostatics and electric fields',
+        outcomes: [
+          'Describe and explain forces between charged objects and between charged and neutral objects',
+          'Classify materials as conductors or insulators and explain their behaviour',
+          'Solve problems involving static electrical phenomena',
+          "Model the electrostatic force between point charges using Coulomb's law: F = kq₁q₂/r²",
+          'Discuss the electric field as a model for non-contact interaction between charges',
+          'Define electric field strength at a point: E = F/q',
+          'Use field lines to represent the relative strength and direction of electric fields around charged objects',
+        ],
+      },
+      {
+        label: '3.2 Current electricity and circuits',
+        outcomes: [
+          'Apply the relationship between current and charge: Q = It',
+          'Apply the relationship between work, charge and potential difference: V = W/Q',
+          'Apply relationships between current, voltage, power and resistance: V = IR, P = VI',
+          'Analyse series and parallel circuits, including the rules for voltage and current',
+          'Apply formulae for resistors in series and parallel',
+          'Investigate the use of semiconductors and diodes in real-world applications',
+          "Verify Ohm's law for an ohmic conductor",
+          'Investigate current–voltage characteristics of non-ohmic conductors',
+          'Investigate the effect of temperature on the resistance of a conductor',
+        ],
+      },
+      {
+        label: '3.3 Magnetic fields and the motor effect',
+        outcomes: [
+          'Describe and draw magnetic field patterns around a permanent magnet, a current-carrying straight wire, and a solenoid',
+          'Investigate the use of permanent and temporary magnets in real-life situations',
+          'Relate the magnetic force on a current-carrying conductor to field and current: F = BIl',
+          'Explain the motor effect and describe how a DC motor works',
+        ],
+      },
+      {
+        label: '3.4 Electromagnetic induction and generators',
+        outcomes: [
+          "Investigate the relationship between a change in magnetic flux and induced EMF (Faraday's law; Lenz's law)",
+          'Model the generator effect and describe how AC and DC generators work',
+          'Explain the operating principle of a transformer and solve efficiency problems',
+          'Investigate transmission losses in the National Grid',
+          'Evaluate issues related to electrical generation and distribution',
+        ],
+      },
     ],
   },
   {
-    name: 'Optics',
+    name: 'Strand 4: Modern Physics — Atomic and Nuclear',
     subtopics: [
-      { label: 'Plane and curved mirrors; ray diagrams' },
-      { label: 'Converging and diverging lenses; lens formula' },
-      { label: 'Magnification and power of a lens' },
-      { label: 'The electromagnetic spectrum' },
-    ],
-  },
-  {
-    name: 'Electricity',
-    subtopics: [
-      { label: "Electrostatics; Coulomb's law; electric fields" },
-      { label: "Current, charge and Ohm's law" },
-      { label: 'Resistance and resistivity' },
-      { label: 'Series and parallel circuits' },
-      { label: 'EMF and internal resistance' },
-      { label: 'Electrical power and energy' },
-      { label: 'Capacitance; energy stored in a capacitor' },
-      { label: 'Capacitors in series and parallel', hlOnly: true },
-    ],
-  },
-  {
-    name: 'Magnetism and Electromagnetism',
-    subtopics: [
-      { label: 'Magnetic fields; force on a conductor' },
-      { label: 'Force on a moving charge' },
-      { label: "Electromagnetic induction; Faraday's and Lenz's laws" },
-      { label: 'Flux and induced EMF' },
-      { label: 'Alternating current; peak and RMS values' },
-      { label: 'Transformers' },
-      { label: 'DC motors and AC generators' },
-    ],
-  },
-  {
-    name: 'Modern Physics',
-    subtopics: [
-      { label: 'Thermionic emission; the electron gun' },
-      { label: "The photoelectric effect; Einstein's equation" },
-      { label: 'Atomic structure; Bohr model; line spectra' },
-      { label: 'Radioactivity; alpha, beta and gamma radiation' },
-      { label: 'Half-life and radioactive decay' },
-      { label: 'Nuclear fission and fusion; E = mc²' },
-      { label: 'Particle physics; quarks and the Standard Model', hlOnly: true },
-    ],
-  },
-  {
-    name: 'Option Topics (HL only)',
-    subtopics: [
-      { label: 'Applied electricity; rectification and diodes', hlOnly: true },
-      { label: 'Acoustics; intensity levels; musical instruments', hlOnly: true },
-      { label: 'Atmospheric physics; greenhouse effect', hlOnly: true },
+      {
+        label: '4.1 The electron and thermionic emission',
+        outcomes: [
+          'Describe evidence supporting the existence and properties of the electron (e.g. cathode ray experiments)',
+          'Explain the basic principles of thermionic emission',
+          'Describe the deflection of a beam of electrons in electric and magnetic fields',
+        ],
+      },
+      {
+        label: '4.2 The photoelectric effect',
+        outcomes: [
+          'Verify the photoelectric effect and explain the effect of varying intensity and frequency of incident radiation',
+          "Explain how photoelectric emission supports the particle model of light (photons; E = hf)",
+          'Relate the photoelectric effect to the operation of a photocell',
+          'Investigate real-life applications of the photoelectric effect',
+          'Compare x-ray production and the photoelectric effect',
+        ],
+      },
+      {
+        label: '4.3 Atomic structure and emission spectra',
+        outcomes: [
+          'Model the atom and explain how emission and absorption spectra arise from electron energy transitions',
+          'Appreciate how the analysis of emission spectra has contributed to our understanding of the universe',
+        ],
+      },
+      {
+        label: '4.4 Radioactivity and nuclear decay',
+        outcomes: [
+          'Analyse evidence supporting the existence of natural background radiation',
+          'Classify alpha, beta and gamma emissions in terms of relative ionising effects, penetrating power, charge, mass and deflection in fields',
+          'Model spontaneous radioactive decay using the decay equation',
+          'Apply the half-life model to solve problems involving activity and amount of sample remaining',
+          'Analyse the Cockcroft and Walton experiment and appreciate its significance as the first nuclear transformation by artificially accelerated particles',
+        ],
+      },
+      {
+        label: '4.5 Particle physics and nuclear energy',
+        outcomes: [
+          'Describe matter in terms of fundamental particles (quarks, leptons) and their properties using secondary sources',
+          'Explain how forces are communicated between fundamental particles (exchange particles)',
+          'Model nuclear fission, nuclear fusion and particle–antiparticle interactions (E = mc²)',
+          'Evaluate evidence about issues related to nuclear fission and fusion in electrical generation',
+        ],
+      },
     ],
   },
 ]
@@ -107,34 +242,54 @@ const TOPICS = [
 // ---------------------------------------------------------------------------
 // System / user prompts
 // ---------------------------------------------------------------------------
-const SYSTEM_PROMPT = `You are an experienced Irish Leaving Certificate Physics teacher creating retrieval practice questions for classroom use. You have deep knowledge of the Irish LC Physics syllabus at both Higher Level and Ordinary Level. You follow the Irish State Examinations Commission syllabus and use only formulae, constants, and values from the official SEC formula and data sheet. All questions must be answerable from the information given in the question alone. Use Irish English spelling throughout (colour, centre, analyse, practise, etc.). Respond only with a valid JSON object — no markdown, no code fences, no explanation or text outside the JSON.`
+const SYSTEM_PROMPT = `You are an experienced Irish Leaving Certificate Physics teacher creating retrieval practice questions aligned to the 2025 NCCA LC Physics specification. You have deep expertise in the specification's four strands: Forces and Motion, Wave Motion and Energy Transfer, Electric and Magnetic Fields, and Modern Physics. Every question must directly target a specific learning outcome from the specification — i.e. it must ask students to do something they are explicitly expected to be able to demonstrate (model, calculate, verify, investigate, explain, classify, etc.). Use only formulae and constants from the official SEC formula and data sheet. All questions must be answerable from the information provided in the question. Use Irish English spelling throughout (colour, centre, analyse, practise, etc.). Respond only with a valid JSON object — no markdown, no code fences, no explanation or text outside the JSON.`
 
 function buildUserPrompt(level, questionCount, selectedSubtopics) {
   const levelLabel = level === 'HL' ? 'Higher Level' : 'Ordinary Level'
-  const topicList = selectedSubtopics.join(', ')
+
+  // Look up the full subtopic objects (with outcomes) for selected labels
+  const allSubtopics = TOPICS.flatMap((t) => t.subtopics)
+  const selected = allSubtopics.filter((st) => selectedSubtopics.includes(st.label))
+
+  const topicBlock = selected
+    .map((st) => {
+      const outcomeList = st.outcomes.map((o) => `    • ${o}`).join('\n')
+      return `${st.label}\n${outcomeList}`
+    })
+    .join('\n\n')
+
   const interleaveInstruction =
-    selectedSubtopics.length > 1
-      ? 'Interleave the topics across questions so that no two consecutive questions come from the same subtopic area.'
-      : 'All questions may come from the single selected topic.'
+    selected.length > 1
+      ? 'Spread questions across the selected sections — no two consecutive questions should target the same section.'
+      : 'All questions may come from the single selected section.'
   const graphInstruction =
-    selectedSubtopics.length > 1
+    selected.length > 1
       ? 'Include at least one graph-based question with data suitable for rendering in Recharts (line, bar, or scatter chart).'
-      : 'Include a graph-based question if the selected topic lends itself to one.'
+      : 'Include a graph-based question if the selected section lends itself to one.'
+
   return `Generate ${questionCount} Leaving Certificate Physics retrieval practice questions at ${levelLabel}.
-Draw questions only from the following selected topics: ${topicList}.
+
+Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, etc.
+
+Selected sections and their learning outcomes:
+
+${topicBlock}
+
 ${interleaveInstruction}
 ${graphInstruction}
 Vary the question types across the set, choosing from: multiple_choice, short_answer, explain, and graph.
+
 Return only a JSON object matching exactly this schema:
 {
   "questions": [
     {
       "id": number,
-      "topic": "main topic area name",
-      "subtopic": "exact subtopic label as provided",
+      "topic": "strand name (e.g. Strand 1: Forces and Motion)",
+      "subtopic": "section label (e.g. 1.2 Forces acting on a particle)",
+      "learning_outcome": "the specific learning outcome this question targets",
       "type": "multiple_choice" | "short_answer" | "explain" | "graph",
       "question_text": "the question",
-      "options": ["A", "B", "C", "D"] or null,
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."] or null,
       "correct_answer": "the correct answer",
       "explanation": "brief explanation for the teacher",
       "graph": {
@@ -228,11 +383,16 @@ function QuestionCard({ q, index, showAnswer }) {
 
   return (
     <div className="question-block mb-6 pb-6 border-b border-gray-200 last:border-0">
-      {/* Topic tag — screen only */}
-      <div className="topic-tag screen-only mb-1">
+      {/* Topic / subtopic tags — screen only */}
+      <div className="topic-tag screen-only mb-1 flex flex-wrap gap-1">
         <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">
-          {q.topic}
+          {q.subtopic}
         </span>
+        {q.learning_outcome && (
+          <span className="inline-block bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded italic">
+            {q.learning_outcome}
+          </span>
+        )}
       </div>
 
       {/* Graph */}
@@ -406,8 +566,8 @@ function ConfigPanel({ state, setState }) {
         <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-2">
           Number of Questions
         </h2>
-        <div className="flex gap-2">
-          {[4, 8].map((n) => (
+        <div className="flex gap-2 flex-wrap">
+          {[4, 6, 8, 12].map((n) => (
             <button
               key={n}
               onClick={() => setState((s) => ({ ...s, questionCount: n }))}
@@ -417,7 +577,7 @@ function ConfigPanel({ state, setState }) {
                   : 'bg-white border-gray-300 text-gray-700 hover:border-blue-400'
               }`}
             >
-              {n} questions
+              {n}
             </button>
           ))}
         </div>
