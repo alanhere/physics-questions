@@ -539,7 +539,11 @@ function ConfigPanel({ state, setState }) {
         <input
           type="password"
           value={state.apiKey}
-          onChange={(e) => setState((s) => ({ ...s, apiKey: e.target.value }))}
+          onChange={(e) => {
+            const key = e.target.value
+            localStorage.setItem('anthropic_api_key', key)
+            setState((s) => ({ ...s, apiKey: key }))
+          }}
           placeholder="sk-ant-..."
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -679,7 +683,7 @@ const INITIAL_STATE = {
   questionCount: 4,
   selectedSubtopics: [],
   expandedTopics: TOPICS.map((t) => t.name),
-  apiKey: '',
+  apiKey: localStorage.getItem('anthropic_api_key') || '',
   questions: null,
   loading: false,
   error: null,
