@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  background-color: #f8fafc;
+  color: #1e293b;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Print layout ── */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .no-print,
+  .toolbar {
+    display: none !important;
+  }
+
+  .screen-only,
+  .topic-tag {
+    display: none !important;
+  }
+
+  .print-only,
+  .print-header,
+  .print-footer {
+    display: block !important;
+  }
+
+  .answer-panel {
+    display: none !important;
+  }
+
+  .print-answer-space {
+    display: block !important;
+  }
+
+  .question-block {
+    page-break-inside: avoid;
+  }
+
+  .graph-container {
+    height: 160px !important;
+  }
+
+  * {
+    background: white !important;
+    color: black !important;
+    border-color: #999 !important;
+  }
+}
+
+/* ── Screen: hide print-only elements ── */
+@media screen {
+  .print-only,
+  .print-header,
+  .print-footer {
+    display: none !important;
+  }
+}
+
+/* ── Screen: question font sizes for projection ── */
+.question-block p.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
