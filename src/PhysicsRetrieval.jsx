@@ -330,17 +330,19 @@ Verify — give evidence to support the truth of a statement.
 ANSWER FORMAT RULES BY ACTION VERB
 ═══════════════════════════════════════
 
-── CALCULATE and DETERMINE ──
-Use a numbered Markdown list, one step per item:
-1. State the formula in symbolic form.
-2. Substitute the known values with units.
-3. Show each arithmetic step.
-4. State the **final answer with units in bold**.
+── CALCULATE, DETERMINE and SOLVE ──
+Use this five-step structure for every calculation problem, presented as a numbered Markdown list:
+
+1. **Known quantities:** List every given value with its SI unit (e.g. m = 2 kg, v = 6 m/s).
+2. **Find:** State exactly what is being calculated (e.g. "Find: kinetic energy, E_k").
+3. **Equation:** Write the equation that links the knowns to the unknown, and state in one brief phrase why this equation was chosen (e.g. "E_k = ½mv² — this is the definition of kinetic energy").
+4. **Substitute and solve:** Substitute the values with units and work through each arithmetic step on a separate line. State the **final answer in bold with correct units**.
+5. **Check:** State whether the magnitude is physically reasonable and confirm the units are correct (e.g. "36 J is a plausible kinetic energy for a 2 kg object moving at 6 m/s. Units: kg × (m/s)² = J ✓").
 
 Do not round intermediate values. Round the final answer to 3 significant figures unless the result is a clean integer or the question specifies otherwise.
 
-Example of correct Calculate answer (as it should appear inside the JSON string):
-"1. **Formula:** E_k = ½mv²\n2. **Substitute:** E_k = ½ × 2 × 6²\n3. **Calculate:** E_k = ½ × 2 × 36\n4. **Answer:** **E_k = 36 J**"
+Example of correct Calculate answer:
+"1. **Known:** m = 2 kg, v = 6 m/s\n2. **Find:** kinetic energy, E_k\n3. **Equation:** E_k = ½mv² — definition of kinetic energy\n4. **Substitute:** E_k = ½ × 2 × 6² = ½ × 2 × 36 = **36 J**\n5. **Check:** 36 J is reasonable for a 2 kg object at 6 m/s. Units: kg·m²/s² = J ✓"
 
 ── DERIVE ──
 State the starting relationship first. Show each algebraic manipulation on a new line. Clearly identify the derived result at the end.
@@ -400,11 +402,7 @@ State the two quantities or concepts being related. Express the relationship in 
 State which rule, formula or principle is being used and why it applies. Substitute the relevant values and carry out the necessary steps. State the result clearly.
 
 ── SOLVE ──
-Use the same numbered step format as CALCULATE:
-1. Identify the relevant principle or formula.
-2. List the known quantities with units.
-3. Substitute and carry out each arithmetic step.
-4. State the **final answer with units in bold**.
+Use the same five-step format as CALCULATE and DETERMINE above.
 
 ── RESOLVE ──
 State the vector being resolved and the angle involved. Write the two component equations (horizontal: F cos θ; vertical: F sin θ). Substitute the values and state both components with units.
@@ -434,7 +432,7 @@ Break the situation down into its component parts. Identify the relationships be
 Graph answers must follow this structure in order:
 1. Interpret the shape: state in one sentence what the form of the graph tells us physically (e.g. "The straight line through the origin indicates that current is directly proportional to voltage, confirming that Ohm's law is obeyed over this range.").
 2. Identify the data points: name the specific coordinates being used as ordered pairs before any calculation.
-3. Show the calculation: follow the same step-by-step format as Calculate answers above.
+3. Show the calculation: follow the same five-step format as Calculate answers above.
 4. State the physical meaning: conclude with one sentence stating what the numerical result means physically.
 Where the question involves the area under a graph, state explicitly what physical quantity that area represents before calculating it.
 
