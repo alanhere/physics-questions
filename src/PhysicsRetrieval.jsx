@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
 import {
   LineChart, Line,
   BarChart, Bar,
@@ -284,7 +285,7 @@ CRITICAL RULES — these apply to every response without exception:
 4. Every question must be answerable from the information given in the question alone.
 5. Every question must contain exactly one action verb from the NCCA LC Physics glossary.
 6. The model answer must fulfil precisely what that action verb demands — no more and no less.
-7. Never use bullet points or numbered lists inside any answer. All answers are written in full prose sentences.
+7. Format all answers using Markdown inside the JSON string. Use numbered lists for calculation steps, **bold** for key equations and final answers, and paragraph breaks between sections. Escape double quotes inside strings. Do not use raw \\n sequences — use actual Markdown structure.
 
 ═══════════════════════════════════════
 ACTION VERB DEFINITIONS (NCCA official)
@@ -294,6 +295,7 @@ Analyse — study in detail; break down to identify parts, relationships and ess
 Apply — select and use knowledge to explain a given situation or real circumstances.
 Appreciate — recognise the meaning of; show a practical understanding of.
 Calculate — obtain a numerical answer showing all relevant stages in the working.
+Categorise — arrange or place items into groups according to shared properties or criteria.
 Classify — group things based on common characteristics.
 Compare — give an account of similarities and/or differences between two or more items, referring to both throughout.
 Define — give the precise meaning of a word, phrase, concept or physical quantity.
@@ -319,6 +321,8 @@ Prove — use a sequence of logical steps to obtain the required result in a for
 Recall — remember or recognise from prior learning.
 Recognise — identify facts, characteristics or concepts critical to understanding a situation.
 Relate — associate, giving reasons.
+Resolve — split a vector quantity into two perpendicular components using trigonometry.
+Solve — obtain the answer to a problem by applying relevant physics principles and mathematical operations, showing all working.
 Use — apply knowledge or rules to put theory into practice.
 Verify — give evidence to support the truth of a statement.
 
@@ -327,14 +331,16 @@ ANSWER FORMAT RULES BY ACTION VERB
 ═══════════════════════════════════════
 
 ── CALCULATE and DETERMINE ──
-Step 1: State the formula in symbolic form on its own line.
-Step 2: Substitute the known values with units on the next line.
-Step 3: Show each arithmetic step on a separate line.
-Step 4: State the final answer with correct units on its own line.
-Do not round intermediate values. Round the final answer to 3 significant figures unless the result is a clean integer or the question specifies otherwise. Never give a bare numerical result without working.
+Use a numbered Markdown list, one step per item:
+1. State the formula in symbolic form.
+2. Substitute the known values with units.
+3. Show each arithmetic step.
+4. State the **final answer with units in bold**.
 
-Example of correct Calculate answer:
-"E_k = ½mv²\\nE_k = ½ × 2 × 6²\\nE_k = ½ × 2 × 36\\nE_k = 36 J"
+Do not round intermediate values. Round the final answer to 3 significant figures unless the result is a clean integer or the question specifies otherwise.
+
+Example of correct Calculate answer (as it should appear inside the JSON string):
+"1. **Formula:** E_k = ½mv²\n2. **Substitute:** E_k = ½ × 2 × 6²\n3. **Calculate:** E_k = ½ × 2 × 36\n4. **Answer:** **E_k = 36 J**"
 
 ── DERIVE ──
 State the starting relationship first. Show each algebraic manipulation on a new line. Clearly identify the derived result at the end.
@@ -355,7 +361,7 @@ Example of correct Define answer:
 "Electric field strength at a point is defined as the force per unit positive charge placed at that point, given by E = F/q, where F is the force in newtons and q is the charge in coulombs. The SI unit is newtons per coulomb (N/C), which is equivalent to volts per metre (V/m)."
 
 ── EXPLAIN ──
-Write a prose paragraph of three to five sentences. Open with a direct statement that answers the question. Develop the physical mechanism or principle with reasons and causes. Close with the observable consequence or real-world significance. Do not use bullet points.
+Write a prose paragraph of three to five sentences. Open with a direct statement that answers the question. Develop the physical mechanism or principle with reasons and causes. Close with the observable consequence or real-world significance. Use plain prose — no bullet points — but you may bold key physics terms on first use.
 
 Example of correct Explain answer:
 "A transformer does not work with direct current because it relies on electromagnetic induction to transfer energy between coils. For an EMF to be induced in the secondary coil, the magnetic flux through it must be continuously changing. An alternating current in the primary coil produces a continuously changing magnetic field and therefore a continuously changing flux through the secondary coil, inducing an alternating EMF. A direct current produces a constant magnetic field, so the flux does not change and no EMF is induced in the secondary coil."
@@ -371,6 +377,40 @@ Example of correct Compare answer:
 
 ── DISCUSS ──
 Write a balanced, considered prose account presenting more than one argument, factor or perspective. Include a concluding statement that is explicitly supported by the evidence or arguments presented. Neither one-sided advocacy nor unsupported assertion is acceptable.
+
+── MODEL ──
+Choose the most appropriate representation for the situation: an equation, a labelled diagram description, a graph description, or a prose explanation of the underlying physics. State the assumptions the model makes. Apply the model to the specific situation in the question and state what it predicts or shows.
+
+── INVESTIGATE ──
+State the aim of the investigation in one sentence. Identify the independent and dependent variables and the key control variables. Outline the method in prose, describing how the data would be collected and what would be measured. State the expected relationship and how the data would confirm or contradict it.
+
+── APPLY ──
+Identify the relevant physics principle or formula in one sentence. Show how the known information maps onto that principle. Carry out any necessary calculation or reasoning. Conclude with an explicit statement of the result or explanation of the situation.
+
+── CLASSIFY / CATEGORISE ──
+State the classification scheme or criteria being used. Assign each item to its category with a brief reason. Present as a short prose account, not a table.
+
+── EXAMINE ──
+Identify the claim, evidence or concept being examined. State what the evidence shows and what it does not show. Identify any assumptions or limitations. Conclude with a clear statement of what the examination reveals.
+
+── RELATE ──
+State the two quantities or concepts being related. Express the relationship in both words and, where appropriate, a formula. Explain the physical reason for the relationship. Give a brief example or consequence.
+
+── USE ──
+State which rule, formula or principle is being used and why it applies. Substitute the relevant values and carry out the necessary steps. State the result clearly.
+
+── SOLVE ──
+Use the same numbered step format as CALCULATE:
+1. Identify the relevant principle or formula.
+2. List the known quantities with units.
+3. Substitute and carry out each arithmetic step.
+4. State the **final answer with units in bold**.
+
+── RESOLVE ──
+State the vector being resolved and the angle involved. Write the two component equations (horizontal: F cos θ; vertical: F sin θ). Substitute the values and state both components with units.
+
+── APPRECIATE ──
+Write two to three prose sentences. Acknowledge what is significant or meaningful about the phenomenon, discovery or application. Connect it to a broader context in physics or society. No bullet points.
 
 ── IDENTIFY and RECALL ──
 Write one or two brief, direct sentences stating the distinguishing fact, feature or definition. No elaboration beyond what is asked.
@@ -461,7 +501,7 @@ function buildUserPrompt(level, questionCount, selectedOutcomes) {
 
   return `Generate ${questionCount} Leaving Certificate Physics retrieval practice questions at ${levelLabel}.
 
-Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, etc. Do not invent questions on topics outside this list.
+Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, justify, etc. You may also use justify when it naturally fits the content of a learning outcome, even if the outcome uses a different verb. Do not invent questions on topics outside this list.
 
 Selected learning outcomes (grouped by section):
 
@@ -631,11 +671,15 @@ function QuestionCard({ q, index, showAnswer }) {
       {/* Answer panel — shown only in answer view */}
       {showAnswer && (
         <div className="answer-panel mt-4 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
-          <p className="font-semibold text-emerald-900 text-base">
-            Answer: {q.correct_answer}
-          </p>
+          <p className="font-semibold text-emerald-900 text-sm uppercase tracking-wide mb-2">Answer</p>
+          <div className="prose prose-sm prose-emerald max-w-none text-emerald-900 [&_ol]:pl-5 [&_ol]:space-y-1 [&_li]:leading-snug [&_p]:leading-relaxed [&_p]:mb-2 [&_strong]:font-bold">
+            <ReactMarkdown>{q.correct_answer}</ReactMarkdown>
+          </div>
           {q.explanation && (
-            <p className="mt-1 text-sm text-emerald-800">{q.explanation}</p>
+            <div className="mt-3 pt-3 border-t border-emerald-200">
+              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1">Note</p>
+              <p className="text-sm text-emerald-800 italic">{q.explanation}</p>
+            </div>
           )}
         </div>
       )}
