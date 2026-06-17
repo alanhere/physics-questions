@@ -309,7 +309,7 @@ ${c}`}).join(`
 
 `),l=a.length>1?"Spread questions across the selected sections — no two consecutive questions should target the same section.":"All questions may come from the single selected section.",u=a.length>1?"Include at least one graph-based question with data suitable for rendering in Recharts (line, bar, or scatter chart).":"Include a graph-based question if the selected section lends itself to one.";return`Generate ${t} Leaving Certificate Physics retrieval practice questions at ${r}.
 
-Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, etc. Do not invent questions on topics outside this list.
+Each question MUST be directly grounded in one of the specific learning outcomes listed below. The question should ask students to do exactly what the learning outcome says — model, calculate, verify, explain, classify, investigate, apply, justify, etc. You may also use justify when it naturally fits the content of a learning outcome, even if the outcome uses a different verb. Do not invent questions on topics outside this list.
 
 Selected learning outcomes (grouped by section):
 
