@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Physics Linearization Sandbox</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  * { font-family: Arial, Helvetica, sans-serif; }
+  body { background-color: #F9FAFB; color: #111827; }
+  .flash { animation: flashBorder 0.6s ease-in-out; }
+  @keyframes flashBorder {
+    0% { border-color: #111827; }
+    50% { border-color: #9CA3AF; }
+    100% { border-color: #111827; }
+  }
+  input[type="range"] { accent-color: #111827; }
+</style>
+</head>
+<body class="min-h-screen">
+
+<header class="border-b border-black bg-white px-6 py-4">
+  <h1 class="text-2xl font-bold tracking-tight">The Physics Linearization Sandbox</h1>
+  <p class="text-sm text-gray-600 mt-1">Discover how transforming variables turns curves into straight lines — and map them onto <span class="font-semibold">y = mx + c</span>.</p>
+</header>
+
+<main class="grid grid-cols-1 lg:grid-cols-3 gap-0 lg:gap-0">
+
+  <!-- PANEL A -->
+  <section class="border border-gray-200 bg-white p-5 flex flex-col gap-5">
+    <div>
+      <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Experiment</label>
+      <select id="experimentSelect" class="w-full border border-black px-3 py-2 bg-white text-sm focus:outline-none">
+        <option value="snell">Verification of Snell's Law (i vs r)</option>
+        <option value="pendulum">Investigation of a Pendulum (T vs l)</option>
+        <option value="acceleration">Uniform Acceleration (s vs t)</option>
+      </select>
+      <p id="experimentDesc" class="text-xs text-gray-600 mt-2"></p>
+    </div>
+
+    <div>
+      <h2 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Raw Data Table</h2>
+      <div class="border border-gray-200 max-h-64 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-white border-b border-black">
+            <tr id="tableHead"></tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Vertical Axis (y)</label>
+        <select id="ySelect" class="w-full border border-black px-2 py-2 bg-white text-sm focus:outline-none"></select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Horizontal Axis (x)</label>
+        <select id="xSelect" class="w-full border border-black px-2 py-2 bg-white text-sm focus:outline-none"></select>
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">
+        Add Data Uncertainty: <span id="noiseLabel" class="font-mono">0%</span>
+      </label>
+      <input id="noiseSlider" type="range" min="0" max="5" step="0.1" value="0" class="w-full">
+      <p class="text-xs text-gray-500 mt-1">Simulates random human/instrument scatter on each data point.</p>
+    </div>
+  </section>
+
+  <!-- PANEL B -->
+  <section class="border border-gray-200 border-l-0 lg:border-l-0 bg-white p-5 flex flex-col gap-4">
+    <h2 class="text-xs font-bold uppercase tracking-wide text-gray-500">Plot</h2>
+    <div class="border border-gray-200 p-3">
+      <canvas id="chartCanvas" height="280"></canvas>
+    </div>
+    <div id="statsBox" class="border border-black p-4 grid grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-xs uppercase tracking-wide text-gray-500">Slope (m)</p>
+        <p id="slopeVal" class="text-xl font-bold font-mono">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-gray-500">Intercept (c)</p>
+        <p id="interceptVal" class="text-xl font-bold font-mono">—</p>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-wide text-gray-500">R²</p>
+        <p id="r2Val" class="text-xl font-bold font-mono">—</p>
+      </div>
+    </div>
+    <p id="linearityNote" class="text-sm text-gray-600 border-t border-gray-200 pt-3"></p>
+  </section>
+
+  <!-- PANEL C -->
+  <section class="border border-gray-200 border-l-0 bg-white p-5 flex flex-col gap-5">
+    <h2 class="text-xs font-bold uppercase tracking-wide text-gray-500">The "Abstraction Moment" Worksheet</h2>
+
+    <div id="mappingBox" class="border border-black p-4 text-center font-mono text-sm leading-loose overflow-x-auto whitespace-nowrap">
+      <div id="line1" class="text-base font-bold"></div>
+      <div id="line2" class="text-gray-400 text-lg"></div>
+      <div id="line3" class="text-base font-bold"></div>
+    </div>
+
+    <div id="alertBox" class="hidden border border-black p-3 text-sm font-semibold text-center"></div>
+
+    <div id="fillBox" class="hidden flex flex-col gap-3">
+      <div class="border border-gray-200 p-3">
+        <label class="block text-xs font-bold uppercase tracking-wide text-gray-500 mb-1">Slope value found from graph</label>
+        <input id="slopeInput" type="text" placeholder="Enter the slope (m) you read from the graph" class="w-full border border-black px-3 py-2 text-sm font-mono focus:outline-none">
+        <p id="slopeHint" class="text-xs text-gray-500 mt-1"></p>
+      </div>
+
+      <div class="border border-black p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Extract the Physical Constant</h3>
+        <p id="constantFormula" class="text-sm font-mono mb-2"></p>
+        <button id="calcBtn" class="border border-black px-4 py-2 text-sm font-semibold hover:bg-gray-100 transition-none">Calculate</button>
+        <p id="constantResult" class="text-sm font-mono mt-3 font-bold"></p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="border-t border-black px-6 py-3 text-xs text-gray-500 text-center">
+  Leaving Certificate Physics — Linearization Sandbox · Monochrome Edition
+</footer>
+
+<script>
+// ---------- Helpers ----------
+const deg2rad = d => d * Math.PI / 180;
+const rand = () => (Math.random() * 2 - 1); // -1..1
+
+function linregress(xs, ys) {
+  const n = xs.length;
+  if (n < 2) return { m: 0, c: 0, r2: 0 };
+  const sumX = xs.reduce((a,b)=>a+b,0);
+  const sumY = ys.reduce((a,b)=>a+b,0);
+  const sumXY = xs.reduce((a,x,i)=>a + x*ys[i], 0);
+  const sumXX = xs.reduce((a,x)=>a + x*x, 0);
+  const sumYY = ys.reduce((a,y)=>a + y*y, 0);
+  const denom = (n*sumXX - sumX*sumX);
+  const m = denom === 0 ? 0 : (n*sumXY - sumX*sumY) / denom;
+  const c = (sumY - m*sumX) / n;
+  const ssTot = sumYY - sumY*sumY/n;
+  const ssRes = ys.reduce((a,y,i)=> a + Math.pow(y - (m*xs[i]+c), 2), 0);
+  const r2 = ssTot === 0 ? 1 : 1 - ssRes/ssTot;
+  return { m, c, r2 };
+}
+
+// ---------- Experiment definitions ----------
+// Each experiment generates raw data (rawX, rawY) with realistic noise,
+// defines transform options for each axis, and the correct combo.
+const experiments = {
+  snell: {
+    name: "Verification of Snell's Law",
+    desc: "Light passes from glass to air. Raw X = angle of refraction r (°), Raw Y = angle of incidence i (°). Correct linearization: plot sin(i) vs sin(r).",
+    rawXLabel: "r (°) — angle of refraction",
+    rawYLabel: "i (°) — angle of incidence",
+    n: 8,
+    generate(noisePct) {
+      const refractiveIndex = 1.50;
+      const rows = [];
+      const angles = [10, 15, 20, 25, 30, 35, 40, 45];
+      for (let r of angles) {
+        const noiseR = r * (rand() * noisePct/100);
+        const rNoisy = +(r + noiseR).toFixed(1);
+        const sinI = refractiveIndex * Math.sin(deg2rad(rNoisy));
+        let i = Math.asin(Math.min(1, sinI)) * 180 / Math.PI;
+        i = +(i + i*(rand()*noisePct/100)).toFixed(1);
+        rows.push({ rawX: rNoisy, rawY: i });
+      }
+      return rows;
+    },
+    yOptions: [
+      { key: 'rawY', label: 'Raw Y (i)', name: 'i', transform: y => y },
+      { key: 'sinY', label: 'sin(Y) → sin(i)', name: 'sin(i)', transform: y => Math.sin(deg2rad(y)) },
+      { key: 'sqY', label: 'Y² → i²', name: 'i²', transform: y => y*y },
+    ],
+    xOptions: [
+      { key: 'rawX', label: 'Raw X (r)', name: 'r', transform: x => x },
+      { key: 'sinX', label: 'sin(X) → sin(r)', name: 'sin(r)', transform: x => Math.sin(deg2rad(x)) },
+      { key: 'sqX', label: 'X² → r²', name: 'r²', transform: x => x*x },
+    ],
+    correct: { y: 'sinY', x: 'sinX' },
+    formula: { line1: 'sin(i) = (n) · sin(r)', terms: ['sin(i)', 'n', 'sin(r)'] },
+    constant: {
+      label: 'Refractive index n',
+      formulaText: 'n = slope (m)   →   the slope IS the refractive index',
+      compute: m => m,
+      symbol: 'n'
+    }
+  },
+  pendulum: {
+    name: "Investigation of a Pendulum",
+    desc: "A simple pendulum is timed for varying string length. Raw X = length l (m), Raw Y = period T (s). Correct linearization: plot T² vs l.",
+    rawXLabel: "l (m) — pendulum length",
+    rawYLabel: "T (s) — period",
+    n: 8,
+    generate(noisePct) {
+      const g = 9.81;
+      const rows = [];
+      const lengths = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+      for (let l of lengths) {
+        const lNoisy = +(l + l*(rand()*noisePct/100)).toFixed(3);
+        const T = 2*Math.PI*Math.sqrt(l/g);
+        const Tnoisy = +(T + T*(rand()*noisePct/100)).toFixed(3);
+        rows.push({ rawX: lNoisy, rawY: Tnoisy });
+      }
+      return rows;
+    },
+    yOptions: [
+      { key: 'rawY', label: 'Raw Y (T)', name: 'T', transform: y => y },
+      { key: 'sqY', label: 'Y² → T²', name: 'T²', transform: y => y*y },
+      { key: 'sinY', label: 'sin(Y) → sin(T)', name: 'sin(T)', transform: y => Math.sin(y) },
+    ],
+    xOptions: [
+      { key: 'rawX', label: 'Raw X (l)', name: 'l', transform: x => x },
+      { key: 'sqX', label: 'X² → l²', name: 'l²', transform: x => x*x },
+      { key: 'sinX', label: 'sin(X) → sin(l)', name: 'sin(l)', transform: x => Math.sin(x) },
+    ],
+    correct: { y: 'sqY', x: 'rawX' },
+    formula: { line1: 'T² = (4π²/g) · l', terms: ['T²', '4π²/g', 'l'] },
+    constant: {
+      label: 'Gravitational acceleration g',
+      formulaText: 'g = 4π² / slope (m)',
+      compute: m => (4*Math.PI*Math.PI) / m,
+      symbol: 'g'
+    }
+  },
+  acceleration: {
+    name: "Uniform Acceleration",
+    desc: "A trolley accelerates uniformly from rest. Raw X = time t (s), Raw Y = distance s (m). Correct linearization: plot s vs t².",
+    rawXLabel: "t (s) — time",
+    rawYLabel: "s (m) — distance travelled",
+    n: 8,
+    generate(noisePct) {
+      const a = 0.8; // m/s^2
+      const rows = [];
+      const times = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0];
+      for (let t of times) {
+        const tNoisy = +(t + t*(rand()*noisePct/100)).toFixed(2);
+        const s = 0.5 * a * t * t;
+        const sNoisy = +(s + s*(rand()*noisePct/100)).toFixed(3);
+        rows.push({ rawX: tNoisy, rawY: sNoisy });
+      }
+      return rows;
+    },
+    yOptions: [
+      { key: 'rawY', label: 'Raw Y (s)', name: 's', transform: y => y },
+      { key: 'sqY', label: 'Y² → s²', name: 's²', transform: y => y*y },
+      { key: 'sinY', label: 'sin(Y) → sin(s)', name: 'sin(s)', transform: y => Math.sin(y) },
+    ],
+    xOptions: [
+      { key: 'rawX', label: 'Raw X (t)', name: 't', transform: x => x },
+      { key: 'sqX', label: 'X² → t²', name: 't²', transform: x => x*x },
+      { key: 'sinX', label: 'sin(X) → sin(t)', name: 'sin(t)', transform: x => Math.sin(x) },
+    ],
+    correct: { y: 'rawY', x: 'sqX' },
+    formula: { line1: 's = (½a) · t²', terms: ['s', '½a', 't²'] },
+    constant: {
+      label: 'Acceleration a',
+      formulaText: 'a = 2 × slope (m)',
+      compute: m => 2*m,
+      symbol: 'a'
+    }
+  }
+};
+
+// ---------- State ----------
+let currentExp = 'snell';
+let rawData = [];
+let chart = null;
+
+const el = id => document.getElementById(id);
+
+function populateAxisSelectors() {
+  const exp = experiments[currentExp];
+  const ySel = el('ySelect');
+  const xSel = el('xSelect');
+  ySel.innerHTML = exp.yOptions.map(o => `<option value="${o.key}">${o.label}</option>`).join('');
+  xSel.innerHTML = exp.xOptions.map(o => `<option value="${o.key}">${o.label}</option>`).join('');
+  ySel.value = exp.yOptions[0].key;
+  xSel.value = exp.xOptions[0].key;
+}
+
+function renderTable() {
+  const exp = experiments[currentExp];
+  el('tableHead').innerHTML = `<th class="text-left px-3 py-2 font-bold">${exp.rawXLabel}</th><th class="text-left px-3 py-2 font-bold">${exp.rawYLabel}</th>`;
+  el('tableBody').innerHTML = rawData.map(r =>
+    `<tr class="border-b border-gray-100"><td class="px-3 py-1.5 font-mono">${r.rawX}</td><td class="px-3 py-1.5 font-mono">${r.rawY}</td></tr>`
+  ).join('');
+}
+
+function getOption(list, key) {
+  return list.find(o => o.key === key);
+}
+
+function buildTransformedData() {
+  const exp = experiments[currentExp];
+  const yOpt = getOption(exp.yOptions, el('ySelect').value);
+  const xOpt = getOption(exp.xOptions, el('xSelect').value);
+  const points = rawData.map(r => ({
+    x: xOpt.transform(r.rawX),
+    y: yOpt.transform(r.rawY)
+  })).filter(p => isFinite(p.x) && isFinite(p.y));
+  return { points, xOpt, yOpt };
+}
+
+function renderChart() {
+  const { points, xOpt, yOpt } = buildTransformedData();
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  const { m, c, r2 } = linregress(xs, ys);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const pad = (maxX - minX) * 0.08 || 0.1;
+  const lineData = [
+    { x: minX - pad, y: m*(minX - pad) + c },
+    { x: maxX + pad, y: m*(maxX + pad) + c }
+  ];
+
+  const config = {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Data points',
+          data: points,
+          backgroundColor: '#111827',
+          borderColor: '#111827',
+          pointRadius: 5,
+          pointHoverRadius: 6,
+          showLine: false,
+        },
+        {
+          label: 'Line of best fit',
+          data: lineData,
+          type: 'line',
+          borderColor: '#111827',
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#111827',
+          titleFont: { family: 'Arial' },
+          bodyFont: { family: 'Arial' },
+          callbacks: {
+            label: ctx => `(${ctx.parsed.x.toFixed(3)}, ${ctx.parsed.y.toFixed(3)})`
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: xOpt.name, color: '#111827', font: { family: 'Arial', size: 13, weight: 'bold' } },
+          grid: { color: '#E5E7EB' },
+          ticks: { color: '#374151', font: { family: 'Arial' } },
+          border: { color: '#111827' }
+        },
+        y: {
+          title: { display: true, text: yOpt.name, color: '#111827', font: { family: 'Arial', size: 13, weight: 'bold' } },
+          grid: { color: '#E5E7EB' },
+          ticks: { color: '#374151', font: { family: 'Arial' } },
+          border: { color: '#111827' }
+        }
+      }
+    }
+  };
+
+  if (chart) {
+    chart.data = config.data;
+    chart.options = config.options;
+    chart.update();
+  } else {
+    chart = new Chart(el('chartCanvas').getContext('2d'), config);
+  }
+
+  el('slopeVal').textContent = m.toFixed(4);
+  el('interceptVal').textContent = c.toFixed(4);
+  el('r2Val').textContent = r2.toFixed(4);
+
+  el('statsBox').classList.add('flash');
+  setTimeout(() => el('statsBox').classList.remove('flash'), 600);
+
+  return { m, c, r2, xOpt, yOpt };
+}
+
+function isCorrectCombo() {
+  const exp = experiments[currentExp];
+  return el('ySelect').value === exp.correct.y && el('xSelect').value === exp.correct.x;
+}
+
+function renderWorksheet(stats) {
+  const exp = experiments[currentExp];
+  const correct = isCorrectCombo();
+
+  // Line 1: physics formula (always shown)
+  el('line1').textContent = exp.formula.line1;
+
+  if (correct) {
+    el('linearityNote').textContent = '✓ Correct linearization selected — the points align into a straight line through the expected relationship.';
+    el('alertBox').classList.add('hidden');
+    el('fillBox').classList.remove('hidden');
+
+    el('line2').textContent = '↓               ↓               ↓';
+    el('line3').innerHTML = `<span class="font-bold">${stats.yOpt.name}</span> &nbsp;=&nbsp; <span class="font-bold">m</span> &nbsp;·&nbsp; <span class="font-bold">${stats.xOpt.name}</span> &nbsp;+&nbsp; <span class="font-bold">c</span>`;
+
+    el('slopeHint').textContent = `Slope value found from graph = ${stats.m.toFixed(4)}`;
+
+    const cst = exp.constant;
+    el('constantFormula').textContent = cst.formulaText;
+    el('constantResult').textContent = '';
+
+    el('calcBtn').onclick = () => {
+      const raw = el('slopeInput').value.trim();
+      const val = parseFloat(raw);
+      if (isNaN(val)) {
+        el('constantResult').textContent = 'Enter a numeric slope value first.';
+        return;
+      }
+      const result = cst.compute(val);
+      el('constantResult').textContent = `${cst.symbol} = ${result.toFixed(4)}   (${cst.label})`;
+    };
+  } else {
+    el('linearityNote').textContent = 'Adjust the axis transformations until the points fall on a straight line through the data — that is the correct linearization.';
+    el('alertBox').classList.remove('hidden');
+    el('alertBox').textContent = 'Graph Non-Linear: Cannot map to y = mx + c template.';
+    el('fillBox').classList.add('hidden');
+
+    el('line2').textContent = '↓               ↓               ↓';
+    el('line3').innerHTML = `<span class="text-gray-400">y</span> &nbsp;=&nbsp; <span class="text-gray-400">m</span> &nbsp;·&nbsp; <span class="text-gray-400">x</span> &nbsp;+&nbsp; <span class="text-gray-400">c</span>`;
+  }
+}
+
+function refreshAll() {
+  const exp = experiments[currentExp];
+  el('experimentDesc').textContent = exp.desc;
+  rawData = exp.generate(parseFloat(el('noiseSlider').value));
+  renderTable();
+  const stats = renderChart();
+  renderWorksheet(stats);
+}
+
+function refreshChartAndWorksheetOnly() {
+  const stats = renderChart();
+  renderWorksheet(stats);
+}
+
+// ---------- Event wiring ----------
+el('experimentSelect').addEventListener('change', e => {
+  currentExp = e.target.value;
+  populateAxisSelectors();
+  refreshAll();
+});
+
+el('ySelect').addEventListener('change', refreshChartAndWorksheetOnly);
+el('xSelect').addEventListener('change', refreshChartAndWorksheetOnly);
+
+el('noiseSlider').addEventListener('input', e => {
+  el('noiseLabel').textContent = `${parseFloat(e.target.value).toFixed(1)}%`;
+  refreshAll();
+});
+
+// ---------- Init ----------
+populateAxisSelectors();
+refreshAll();
+</script>
+</body>
+</html>
